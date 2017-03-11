@@ -10,12 +10,32 @@
 # Description:       Start the web server
 #  This script will start the apache2 web server.
 ### END INIT INFO
+SS_CONFIG_FILE=/etc/shadowsocks-libev/ibm.json
+
+if [ ! -f $SS_CONFIG_FILE ]; then
+	echo "Config file does not exist! in"
+	echo "	$SS_CONFIG_FILE"
+	exit -1
+fi
+
+
 SS_PID=$$
 SS_PID_FILE=/tmp/shadowsocks.pid
-CHAIN_NAME=SHADOWSOCKS
-SS_IP=169.44.126.240
-SS_PORT=51496
-SS_LOCAL_PORT=1080
+#CHAIN_NAME=SHADOWSOCKS
+SS_IP=$(cat $SS_CONFIG_FILE| grep -i server | head -n 1 | awk -F '"' '{print $4}')
+SS_PORT=$(cat $SS_CONFIG_FILE| grep -i server_port | head -n 1 | awk -F ' ' '{print $2}' | awk -F ',' '{print $1}')
+LOCAL_PORT=$(cat $SS_CONFIG_FILE| grep -i local_port | head -n 1 | awk -F ' ' '{print $2}' | awk -F ',' '{print $1}')
+SS_PWD=$(cat $SS_CONFIG_FILE| grep -i password | head -n 1 | awk -F '"' '{print $4}')
+SS_M=$(cat $SS_CONFIG_FILE| grep -i method | head -n 1 | awk -F '"' '{print $4}')
+
+
+echo "Use Config in $SS_CONFIG_FILE:"
+echo "server: $SS_IP"
+echo "server_port: $SS_PORT"
+echo "local_port: $LOCAL_PORT"
+echo "password: ***********"
+echo "method: $SS_M"
+
 cleanup(){
 	echo "clean config"
 	sudo iptables -t nat -F $CHAIN_NAME
@@ -30,12 +50,12 @@ case "$1" in
 	start)
 		if [ -f "$SS_PID_FILE" ]; then
 			echo "Error:"
-			echo "    Already start Shadowsocks Global Agent."
+			echo "    Already start Shadowsocks! "
 			echo "(You can restart it by option restart)"
-			exit 1
+			exit -1
 		fi
 
-		log_progress_msg "start shadowsocks"
+		echo "start shadowsocks"
 		echo $SS_PID > $SS_PID_FILE
 		trap "cleanup" SIGINT
 		trap "cleanup" SIGUSR1
@@ -80,11 +100,10 @@ case "$1" in
 		exit 0
 		;;
 	restart)
-		echo "Please do stop then start!"
-		exit 0
+		echo "Please do stop and then start!"
 		;;
 	*)
 		echo "Unknow option"
-		exit 1
 		;;
 esac
+
