@@ -59,6 +59,8 @@ case "$1" in
 		echo $SS_PID > $SS_PID_FILE
 		trap "cleanup" SIGINT
 		trap "cleanup" SIGUSR1
+
+		## Make a iptables rule chain
 		sudo iptables -t nat -N $CHAIN_NAME
 
 		## iptables Ignore shadowsocks address
@@ -79,8 +81,7 @@ case "$1" in
 		#sudo iptables -t nat -A $CHAIN_NAME -p udp -j REDIRECT --to-ports $SS_LOCAL_PORT
 		#sudo iptables -t nat -A $CHAIN_NAME -p icmp -j REDIRECT --to-ports $SS_LOCAL_PORT
 	
-		# Apply the rules
-		sudo iptables -t nat -L OUTPUT | grep $CHAIN_NAME >> /dev/null
+		## Apply the rules
 		sudo iptables -t nat -I OUTPUT -j $CHAIN_NAME
 		nohup sudo ss-redir -s $SS_IP -p $SS_PORT -l 1080 -k 19960514 -m aes-256-cfb > /dev/null 2>&1 & 
 		exit 0
